@@ -1,0 +1,3 @@
+standard: $0.2934 · 23.1k in / 6.1k out · 15.1k cache
+compact:  $0.2934
+full:     $0.2934 (29.34 cr) · 23.1k fresh / 12.0k cache↻ / 3.1k cache✎ / 6.1k out · Σ 44.3k · 900 reason

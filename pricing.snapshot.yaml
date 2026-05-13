@@ -1,0 +1,188 @@
+# GitHub Copilot CLI per-million-token pricing.
+#
+# Source: https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
+# Fetched: 2026-04-28
+# Effective: 2026-06-01 (usage-based billing)
+#
+# All prices are USD per 1,000,000 tokens.
+# 1 AI credit = $0.01 USD.
+#
+# Anthropic models include a separate `cache_write` price (1.25x input).
+# OpenAI / Google / xAI models have only `cached_input` (no separate write).
+# Token attribute mapping (from the OTel exporter):
+#   gen_ai.usage.input_tokens                    -> input + cache_read + cache_creation (Anthropic)
+#                                                   or input + cache_read (OpenAI)
+#   gen_ai.usage.output_tokens                   -> output (includes reasoning for OpenAI)
+#   gen_ai.usage.cache_read.input_tokens         -> cache_read (subtract from input_tokens)
+#   gen_ai.usage.cache_creation.input_tokens     -> cache_creation (Anthropic only; subtract too)
+#   gen_ai.usage.reasoning.output_tokens         -> reasoning (subset of output_tokens; for reporting only)
+
+schema_version: 1
+fetched_at: 2026-04-28
+
+models:
+  # ---- OpenAI ----
+  gpt-4.1:
+    vendor: openai
+    category: versatile
+    input: 2.00
+    cached_input: 0.50
+    output: 8.00
+
+  gpt-5-mini:
+    vendor: openai
+    category: lightweight
+    input: 0.25
+    cached_input: 0.025
+    output: 2.00
+
+  gpt-5.2:
+    vendor: openai
+    category: versatile
+    input: 1.75
+    cached_input: 0.175
+    output: 14.00
+
+  gpt-5.2-codex:
+    vendor: openai
+    category: powerful
+    input: 1.75
+    cached_input: 0.175
+    output: 14.00
+
+  gpt-5.3-codex:
+    vendor: openai
+    category: powerful
+    input: 1.75
+    cached_input: 0.175
+    output: 14.00
+
+  gpt-5.4:
+    vendor: openai
+    category: versatile
+    input: 2.50
+    cached_input: 0.25
+    output: 15.00
+
+  gpt-5.4-mini:
+    vendor: openai
+    category: lightweight
+    input: 0.75
+    cached_input: 0.075
+    output: 4.50
+
+  gpt-5.4-nano:
+    vendor: openai
+    category: lightweight
+    input: 0.20
+    cached_input: 0.02
+    output: 1.25
+
+  gpt-5.5:
+    vendor: openai
+    category: powerful
+    input: 5.00
+    cached_input: 0.50
+    output: 30.00
+
+  # ---- Anthropic (cache_write surcharge applies to fresh cache writes) ----
+  claude-haiku-4.5:
+    vendor: anthropic
+    category: versatile
+    input: 1.00
+    cached_input: 0.10
+    cache_write: 1.25
+    output: 5.00
+
+  claude-sonnet-4:
+    vendor: anthropic
+    category: versatile
+    input: 3.00
+    cached_input: 0.30
+    cache_write: 3.75
+    output: 15.00
+
+  claude-sonnet-4.5:
+    vendor: anthropic
+    category: versatile
+    input: 3.00
+    cached_input: 0.30
+    cache_write: 3.75
+    output: 15.00
+
+  claude-sonnet-4.6:
+    vendor: anthropic
+    category: versatile
+    input: 3.00
+    cached_input: 0.30
+    cache_write: 3.75
+    output: 15.00
+
+  claude-opus-4.5:
+    vendor: anthropic
+    category: powerful
+    input: 5.00
+    cached_input: 0.50
+    cache_write: 6.25
+    output: 25.00
+
+  claude-opus-4.6:
+    vendor: anthropic
+    category: powerful
+    input: 5.00
+    cached_input: 0.50
+    cache_write: 6.25
+    output: 25.00
+
+  claude-opus-4.7:
+    vendor: anthropic
+    category: powerful
+    input: 5.00
+    cached_input: 0.50
+    cache_write: 6.25
+    output: 25.00
+
+  # ---- Google ----
+  gemini-2.5-pro:
+    vendor: google
+    category: powerful
+    input: 1.25
+    cached_input: 0.125
+    output: 10.00
+
+  gemini-3-flash:
+    vendor: google
+    category: lightweight
+    input: 0.50
+    cached_input: 0.05
+    output: 3.00
+
+  gemini-3.1-pro:
+    vendor: google
+    category: powerful
+    input: 2.00
+    cached_input: 0.20
+    output: 12.00
+
+  # ---- xAI ----
+  grok-code-fast-1:
+    vendor: xai
+    category: lightweight
+    input: 0.20
+    cached_input: 0.02
+    output: 1.50
+
+  # ---- Fine-tuned (GitHub) ----
+  raptor-mini:
+    vendor: github
+    category: versatile
+    input: 0.25
+    cached_input: 0.025
+    output: 2.00
+
+  goldeneye:
+    vendor: github
+    category: powerful
+    input: 1.25
+    cached_input: 0.125
+    output: 10.00

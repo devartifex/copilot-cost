@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="300" viewBox="0 0 1480 300" role="img" aria-labelledby="title desc">
+  <title id="title">copilot-cost statusline style previews</title>
+  <desc id="desc">Terminal-style preview showing standard, compact, and full copilot-cost statusline formats.</desc>
+  <rect width="1120" height="300" rx="18" fill="#0d1117"/>
+  <rect x="0" y="0" width="1120" height="42" rx="18" fill="#161b22"/>
+  <circle cx="26" cy="21" r="6" fill="#ff5f56"/>
+  <circle cx="48" cy="21" r="6" fill="#ffbd2e"/>
+  <circle cx="70" cy="21" r="6" fill="#27c93f"/>
+  <text x="96" y="27" fill="#8b949e" font-family="SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace" font-size="14">GitHub Copilot CLI statusline</text>
+  <g font-family="SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace" font-size="22">
+    <text x="38" y="92" fill="#7d8590">standard</text>
+    <text x="180" y="92" fill="#e6edf3">$0.2934 · 23.1k in / 6.1k out · 15.1k cache</text>
+    <text x="38" y="158" fill="#7d8590">compact</text>
+    <text x="180" y="158" fill="#e6edf3">$0.2934</text>
+    <text x="38" y="224" fill="#7d8590">full</text>
+    <text x="180" y="224" fill="#e6edf3">$0.2934 (29.34 cr) · 23.1k fresh / 12.0k cache↻ / 3.1k cache✎ / 6.1k out · Σ 44.3k · 900 reason</text>
+  </g>
+</svg>

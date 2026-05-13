@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>copilot-cost dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Copied dist/index.html loads ./styles.css; source preview falls back to ./dist/styles.css. -->
+  <link rel="stylesheet" href="./styles.css" onerror="this.onerror=null;this.href='./dist/styles.css'" />
+</head>
+<body class="h-full bg-background text-foreground font-sans tabular-nums">
+  <noscript>
+    <div class="m-6 rounded-lg border border-border bg-card p-5 text-card-foreground">
+      JavaScript is required to render the copilot-cost dashboard.
+    </div>
+  </noscript>
+
+  <div class="min-h-full lg:grid lg:grid-cols-[260px_1fr]">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-background/95 backdrop-blur lg:sticky lg:block lg:w-auto">
+      <div class="flex h-full flex-col p-4">
+        <a href="#/overview" class="mb-8 flex items-center gap-2 rounded-md px-2 py-1.5 text-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring" aria-label="copilot-cost overview">
+          <span aria-hidden="true">💰</span><span>copilot-cost</span>
+        </a>
+        <nav id="nav" class="space-y-1" aria-label="Primary navigation"></nav>
+        <div class="mt-auto space-y-3 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground">
+          <div class="flex items-center justify-between"><span>Version</span><span class="font-medium text-foreground">v0.1.0</span></div>
+          <span class="pill">127.0.0.1 only</span>
+        </div>
+      </div>
+    </aside>
+
+    <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-background/70 backdrop-blur-sm lg:hidden"></div>
+
+    <div class="min-w-0">
+      <header class="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
+        <div class="flex min-h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <button id="menu-button" class="btn-ghost px-2 lg:hidden" type="button" aria-label="Open navigation">☰</button>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Local usage analytics</p>
+            <h1 id="page-title" class="truncate text-xl font-semibold tracking-tight sm:text-2xl">Overview</h1>
+          </div>
+          <div class="hidden items-center rounded-md border border-border p-0.5 sm:flex" role="group" aria-label="Date range">
+            <button class="range-btn btn-ghost h-8 px-2.5" data-range="7d" type="button">7d</button>
+            <button class="range-btn btn-ghost h-8 px-2.5" data-range="30d" type="button">30d</button>
+            <button class="range-btn btn-ghost h-8 px-2.5" data-range="90d" type="button">90d</button>
+            <button class="range-btn btn-ghost h-8 px-2.5" data-range="all" type="button">All</button>
+          </div>
+          <button id="refresh" class="btn-ghost px-2 sm:px-3" type="button" aria-label="Refresh data">↻<span class="hidden sm:inline">Refresh</span></button>
+          <a class="btn hidden sm:inline-flex" href="/api/export.csv" download>Export CSV</a>
+          <span class="pill hidden md:inline-flex" title="Uses prefers-color-scheme">Theme: auto</span>
+        </div>
+      </header>
+
+      <main id="page" class="px-4 py-6 sm:px-6 lg:px-8" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div id="drawer-root" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

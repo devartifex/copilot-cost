@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Copilot Cost Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:24px;background:#0d1117;color:#e6edf3}a{color:#58a6ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #30363d;padding:8px;text-align:left}.muted{color:#8b949e}button{background:#238636;color:white;border:0;border-radius:6px;padding:8px 12px}</style>
+</head>
+<body>
+  <h1>Copilot Cost Dashboard</h1>
+  <p class="muted">Local token and cost analysis from statusline snapshots.</p>
+  <div class="grid" id="summary"></div>
+  <div class="card"><h2>Daily spend by model</h2><canvas id="timeseries"></canvas></div>
+  <div class="card"><h2>Model leaderboard</h2><table id="models"></table></div>
+  <div class="card"><h2>Sessions</h2><table id="sessions"></table></div>
+  <p><button onclick="refreshPricing()">Refresh pricing</button> <a href="/api/export.csv">Export CSV</a></p>
+<script>
+const money = n => '$' + Number(n||0).toFixed(4);
+const tok = n => Number(n||0).toLocaleString();
+async function get(u){return fetch(u).then(r=>r.json())}
+async function load(){
+  const s=await get('/api/summary');
+  document.getElementById('summary').innerHTML=['lifetime','today','week'].map(k=>`<div class="card"><h2>${k}</h2><p>${money(s[k].usd_cost)} · ${(s[k].usd_cost*100).toFixed(2)} cr</p><p>${tok(s[k].input_tokens)} in / ${tok(s[k].output_tokens)} out</p><p>${tok(s[k].cache_tokens)} cache · ${tok(s[k].premium_requests)} reqs</p></div>`).join('');
+  const ts=await get('/api/timeseries?range=30d');
+  const days=[...new Set(ts.map(x=>x.day))], mods=[...new Set(ts.map(x=>x.model))];
+  new Chart(document.getElementById('timeseries'),{type:'bar',data:{labels:days,datasets:mods.map(m=>({label:m,data:days.map(d=>((ts.find(x=>x.day===d&&x.model===m)||{}).usd_cost)||0)}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true}}}});
+  const models=await get('/api/models');
+  document.getElementById('models').innerHTML='<tr><th>Model</th><th>Cost</th><th>Tokens</th><th>Cache hit</th></tr>'+models.map(m=>`<tr><td>${m.model}</td><td>${money(m.usd_cost)}</td><td>${tok(m.token_volume)}</td><td>${(100*(m.cache_hit_ratio||0)).toFixed(1)}%</td></tr>`).join('');
+  const sessions=await get('/api/sessions');
+  document.getElementById('sessions').innerHTML='<tr><th>Name</th><th>Model</th><th>Cost</th><th>Tokens</th><th>Last seen</th></tr>'+sessions.map(x=>`<tr><td><a href="/api/sessions/${x.id}">${x.session_name||x.id}</a><br><span class="muted">${x.cwd||''}</span></td><td>${x.model||x.first_model||''}</td><td>${money(x.usd_cost)}</td><td>${tok((x.total_input_tokens||0)+(x.total_output_tokens||0))}</td><td>${x.last_seen_at||''}</td></tr>`).join('');
+}
+async function refreshPricing(){await fetch('/api/refresh-pricing',{method:'POST'}); alert('Pricing refreshed.');}
+load();
+</script>
+</body>
+</html>

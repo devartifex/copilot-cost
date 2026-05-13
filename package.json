@@ -1,0 +1,63 @@
+{
+  "name": "copilot-cost",
+  "version": "0.1.0",
+  "description": "Local-only GitHub Copilot CLI statusline + dashboard for real-time token cost tracking. Reads OpenTelemetry traces, never sends data anywhere.",
+  "keywords": [
+    "github",
+    "copilot",
+    "copilot-cli",
+    "statusline",
+    "cost",
+    "tokens",
+    "opentelemetry",
+    "otel",
+    "dashboard"
+  ],
+  "license": "MIT",
+  "author": "devartifex",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "copilot-cost": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "dashboard-ui/dist",
+    "!dist/**/*.map",
+    "!dashboard-ui/dist/**/*.map",
+    "!dashboard-ui/README.md",
+    "pricing.snapshot.yaml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run build:ui && npm run build:js",
+    "build:js": "tsup",
+    "build:ui": "tailwindcss -i dashboard-ui/styles.src.css -o dashboard-ui/dist/styles.css --minify && node scripts/copy-ui.mjs",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "start": "node dist/cli.js",
+    "cli": "npm run build --silent && node dist/cli.js",
+    "local:install": "npm run build && node dist/cli.js install",
+    "local:uninstall": "node dist/cli.js uninstall",
+    "local:doctor": "node dist/cli.js doctor",
+    "local:dashboard": "npm run build --silent && node dist/cli.js dashboard",
+    "screenshots:demo": "node scripts/generate-demo-screenshots.mjs"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.4",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "tailwindcss": "^3.4.13",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}
