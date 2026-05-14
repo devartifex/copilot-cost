@@ -1,0 +1,9 @@
+dist/
+.test-home/
+.test-work/
+node_modules/
+dashboard-ui/dist/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
