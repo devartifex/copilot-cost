@@ -32,7 +32,7 @@ copilot-cost install
 
 Then **restart your shell and restart `copilot`**. That's it.
 
-The installer configures the Copilot CLI statusline, appends an idempotent OpenTelemetry block to your shell profile, and enables local JSONL span output under `~/.copilot/otel/`. It does **not** start the dashboard.
+The installer configures the Copilot CLI statusline (including the required `"experimental": true` flag in `~/.copilot/settings.json` — the GitHub Copilot CLI gates custom status lines behind that flag), appends an idempotent OpenTelemetry block to your shell profile, and enables local JSONL span output under `~/.copilot/otel/`. It does **not** start the dashboard.
 
 Prefer to edit your shell profile yourself? Run `copilot-cost install --no-otel-profile` — the OpenTelemetry block is printed for manual setup.
 
@@ -142,7 +142,7 @@ More on the underlying telemetry pipeline: [Copilot OpenTelemetry observability]
 
 ## 🩺 Troubleshooting
 
-- **The statusline does not appear.** Run `copilot-cost doctor`, then confirm the Copilot CLI was restarted after install.
+- **The statusline does not appear.** Run `copilot-cost doctor`. The custom statusline requires `"experimental": true` in `~/.copilot/settings.json` — without it the GitHub Copilot CLI ignores the `statusLine` block entirely (its logs show `STATUS_LINE: false`). Re-running `copilot-cost install` sets both keys; then restart Copilot CLI.
 - **No usage shows up yet.** Make sure you're on the latest Copilot CLI, restart your shell and `copilot`, send a prompt, then check for JSONL files in `~/.copilot/otel/`.
 - **I do not want profile edits.** Use `copilot-cost install --no-otel-profile` and paste the printed OpenTelemetry block into the shell profile you choose.
 - **The dashboard will not bind.** Use a local host only, e.g. `copilot-cost dashboard --host 127.0.0.1 --port 4567`.

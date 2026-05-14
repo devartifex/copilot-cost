@@ -45,6 +45,36 @@ function otelDir(home = currentHome()): string {
   return path.join(home, ".copilot", "otel");
 }
 
+function copilotLogsDir(home = currentHome()): string {
+  return path.join(home, ".copilot", "logs");
+}
+
+export type StatusLineFlag = "enabled" | "disabled" | "unknown";
+
+export function detectStatusLineFeatureFlag(home = currentHome()): { state: StatusLineFlag; logFile?: string } {
+  const dir = copilotLogsDir(home);
+  if (!existsSync(dir)) return { state: "unknown" };
+  const candidates = readdirSync(dir)
+    .filter((name) => name.startsWith("process-") && name.endsWith(".log"))
+    .map((name) => ({ name, path: path.join(dir, name), mtimeMs: statSync(path.join(dir, name)).mtimeMs }))
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  for (const candidate of candidates.slice(0, 3)) {
+    let content: string;
+    try {
+      content = readFileSync(candidate.path, "utf-8");
+    } catch {
+      continue;
+    }
+    const matches = content.match(/"STATUS_LINE"\s*:\s*"(true|false)"/g);
+    if (!matches || matches.length === 0) continue;
+    const last = matches[matches.length - 1] ?? "";
+    const value = last.match(/"(true|false)"/)?.[1];
+    if (value === "true") return { state: "enabled", logFile: candidate.path };
+    if (value === "false") return { state: "disabled", logFile: candidate.path };
+  }
+  return { state: "unknown" };
+}
+
 function otelExporterPath(home = currentHome()): string {
   return path.join(otelDir(home), "copilot-otel.jsonl");
 }
@@ -164,11 +194,14 @@ function installSettings(settingsPath: string, shimPath: string): "updated" | "a
   mkdirSync(path.dirname(settingsPath), { recursive: true });
   const settings = readJsonObject(settingsPath);
   const next = { type: "command", command: shimPath, padding: 1 };
-  if (JSON.stringify(settings.statusLine ?? null) === JSON.stringify(next)) return "already-configured";
+  const statusLineMatches = JSON.stringify(settings.statusLine ?? null) === JSON.stringify(next);
+  const experimentalEnabled = settings.experimental === true;
+  if (statusLineMatches && experimentalEnabled) return "already-configured";
   if (existsSync(settingsPath)) {
     copyFileSync(settingsPath, `${settingsPath}.bak.${timestamp()}`);
   }
   settings.statusLine = next;
+  settings.experimental = true;
   writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf-8");
   return "updated";
 }
@@ -193,7 +226,7 @@ export async function cmdInstall(opts: { yes?: boolean; otelProfile?: boolean } 
   console.log([
     "copilot-cost installed:",
     `  shim: ${paths.shimPath}`,
-    `  settings: ${paths.settingsPath} (${settingsAction})`,
+    `  settings: ${paths.settingsPath} (${settingsAction}; statusLine + experimental: true)`,
     `  shell profile: ${paths.profilePath}`,
     "  restart: restart Copilot CLI or open a new shell for OTel env vars",
     `  otel env: ${otelAction}`,
@@ -255,6 +288,8 @@ export async function cmdDoctor(): Promise<number> {
   const settings = existsSync(paths.settingsPath) ? readJsonObject(paths.settingsPath) : null;
   const statusLine = settings?.statusLine as { command?: unknown } | undefined;
   if (!okLine("settings statusLine", Boolean(settings && statusLine?.command === paths.shimPath), `${paths.settingsPath}; expected command ${paths.shimPath}`)) failed = true;
+  const experimentalEnabled = settings?.experimental === true;
+  if (!okLine("settings experimental", experimentalEnabled, experimentalEnabled ? `${paths.settingsPath} has \"experimental\": true (required for custom statusLine)` : `${paths.settingsPath} is missing \"experimental\": true; the Copilot CLI ignores statusLine without it. Re-run 'copilot-cost install' or set it manually.`)) failed = true;
 
   try {
     const pricing = loadPricing(pricingCachePath(paths.home));
@@ -273,6 +308,22 @@ export async function cmdDoctor(): Promise<number> {
   okLine("otel profile block", profileConfigured, profileConfigured ? paths.profilePath : `${paths.profilePath} missing copilot-cost block; run copilot-cost install`, false);
   const envEnabled = process.env.COPILOT_OTEL_ENABLED === "true" && process.env.COPILOT_OTEL_EXPORTER_TYPE === "file" && Boolean(process.env.COPILOT_OTEL_FILE_EXPORTER_PATH);
   okLine("shell restart", envEnabled, envEnabled ? "current shell has COPILOT_OTEL_* file exporter variables" : "restart your shell and Copilot CLI so COPILOT_OTEL_* variables take effect", false);
+  const statusLineFlag = detectStatusLineFeatureFlag(paths.home);
+  if (statusLineFlag.state === "disabled") {
+    okLine(
+      "copilot statusline feature",
+      false,
+      `Copilot CLI feature flag STATUS_LINE=false in ${statusLineFlag.logFile ?? copilotLogsDir(paths.home)}. The CLI gates the custom statusLine behind \"experimental\": true in ${paths.settingsPath}. Ensure that flag is set, then restart Copilot CLI.`,
+      false,
+    );
+  } else {
+    okLine(
+      "copilot statusline feature",
+      true,
+      statusLineFlag.state === "enabled" ? "Copilot CLI feature flag STATUS_LINE=true" : "Copilot CLI feature flag STATUS_LINE not observed yet; start Copilot CLI once to populate logs",
+      false,
+    );
+  }
   const otelPath = otelDir(paths.home);
   const jsonlCount = existsSync(otelPath) ? readdirSync(otelPath).filter((name) => name.endsWith(".jsonl") && name !== "copilot-cost-meta.jsonl").length : 0;
   okLine("otel jsonl files", jsonlCount > 0, `${otelPath} (${jsonlCount}); if zero, send a Copilot CLI prompt after shell restart`, false);

@@ -39,8 +39,9 @@ describe("install commands", () => {
     expect(existsSync(otelDir)).toBe(true);
     expect(existsSync(otelExporterPath)).toBe(true);
     if (process.platform !== "win32") expect(statSync(shim).mode & 0o111).not.toBe(0);
-    const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as { statusLine: { command: string } };
+    const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as { statusLine: { command: string }; experimental: boolean };
     expect(settings.statusLine.command).toBe(shim);
+    expect(settings.experimental).toBe(true);
     expect(readFileSync(profilePath, "utf-8")).toContain("copilot-cost OTel exporter");
 
     await expect(cmdInstall({ yes: true })).resolves.toBe(0);

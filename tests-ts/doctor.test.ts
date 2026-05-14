@@ -38,6 +38,7 @@ describe("doctor", () => {
     await cmdInstall({ yes: true });
     await expect(cmdDoctor()).resolves.toBe(0);
     expect(logs.join("\n")).toContain("OK: settings statusLine");
+    expect(logs.join("\n")).toContain("OK: settings experimental");
     expect(logs.join("\n")).toContain("OK: pricing");
     expect(logs.join("\n")).toContain("OK: pricing cache");
     expect(logs.join("\n")).toContain("WARN: shell restart");
@@ -52,6 +53,7 @@ describe("doctor", () => {
     const { cmdDoctor } = await loadInstall("missing");
     await expect(cmdDoctor()).resolves.toBe(1);
     expect(logs.join("\n")).toContain("FAIL: settings statusLine");
+    expect(logs.join("\n")).toContain("FAIL: settings experimental");
     expect(logs.join("\n")).toContain("FAIL: shim executable");
     expect(logs.join("\n")).toContain("missing copilot-cost block");
   });
@@ -66,5 +68,32 @@ describe("doctor", () => {
     await expect(cmdDoctor()).resolves.toBe(0);
     expect(logs.join("\n")).toContain("WARN: otel jsonl files");
     expect(logs.join("\n")).toContain("send a Copilot CLI prompt after shell restart");
+  });
+
+  it("warns when Copilot CLI feature flag STATUS_LINE is false", async () => {
+    const logs: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => { logs.push(String(msg)); });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { cmdInstall, cmdDoctor } = await loadInstall("statusline-flag-off");
+    await cmdInstall({ yes: true });
+    const logsDir = path.join(root, "statusline-flag-off", ".copilot", "logs");
+    mkdirSync(logsDir, { recursive: true });
+    writeFileSync(path.join(logsDir, "process-1.log"), '{\n  "feature_flags": {\n    "STATUS_LINE": "false"\n  }\n}\n', "utf-8");
+    await expect(cmdDoctor()).resolves.toBe(0);
+    expect(logs.join("\n")).toContain("WARN: copilot statusline feature");
+    expect(logs.join("\n")).toContain("STATUS_LINE=false");
+  });
+
+  it("reports OK when Copilot CLI feature flag STATUS_LINE is true", async () => {
+    const logs: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => { logs.push(String(msg)); });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { cmdInstall, cmdDoctor } = await loadInstall("statusline-flag-on");
+    await cmdInstall({ yes: true });
+    const logsDir = path.join(root, "statusline-flag-on", ".copilot", "logs");
+    mkdirSync(logsDir, { recursive: true });
+    writeFileSync(path.join(logsDir, "process-1.log"), '{\n  "feature_flags": {\n    "STATUS_LINE": "true"\n  }\n}\n', "utf-8");
+    await expect(cmdDoctor()).resolves.toBe(0);
+    expect(logs.join("\n")).toContain("OK: copilot statusline feature");
   });
 });
