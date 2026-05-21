@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-21
+
+### Changed
+
+- Changed the statusline UX so `compact` / `minimal` default to estimated USD only, while `standard` and `full` show both estimated USD and GitHub AI Credits (AIC).
+- Added `COPILOT_COST_METRIC` to choose `usd`, `aic`, or `both`, with friendly aliases for dollars, credits, and all metrics.
+- Clarified README disclaimers that displayed costs are local estimates based on GitHub's published per-model pricing, not billing data or a guarantee of what GitHub will charge.
+- Refreshed the bundled pricing snapshot from GitHub's published Copilot models and pricing data.
+
 ## [0.1.0] - 2026-05-14
 
 Initial public release.

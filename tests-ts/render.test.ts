@@ -11,6 +11,7 @@ beforeEach(() => {
   rmSync(tmpHome, { recursive: true, force: true });
   process.env = { ...savedEnv, HOME: tmpHome, COPILOT_OTEL_DIR: path.join(tmpHome, ".copilot", "otel") };
   delete process.env.COPILOT_COST_FORMAT;
+  delete process.env.COPILOT_COST_METRIC;
   delete process.env.COPILOT_COST_HIDE_ZERO;
   delete process.env.COPILOT_COST_NO_COLOR;
   delete process.env.COPILOT_COST_COLOR;
@@ -26,8 +27,8 @@ describe("renderPayload", () => {
   it("renders default standard format", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     const output = renderPayload(payload, { persist: false });
+    expect(output).toContain("$0.2934");
     expect(output).toContain("29.34 AIC");
-    expect(output).not.toContain("$");
     expect(output).toContain("38.2k in / 6.1k out");
   });
 
@@ -51,14 +52,14 @@ describe("renderPayload", () => {
   it("renders compact format", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     process.env.COPILOT_COST_FORMAT = "compact";
-    expect(renderPayload(payload, { persist: false })).toBe("29.34 AIC");
+    expect(renderPayload(payload, { persist: false })).toBe("$0.2934");
   });
 
   it("renders verbose format", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     process.env.COPILOT_COST_FORMAT = "verbose";
     const output = renderPayload(payload, { persist: false });
-    expect(output).toContain("29.34 AIC ($0.2934)");
+    expect(output).toContain("$0.2934 · 29.34 AIC");
     expect(output).toContain("fresh / 12.0k cache rd / 3.1k cache wr / 6.1k out");
     expect(output).toContain("900 reason");
   });
@@ -85,9 +86,9 @@ describe("renderPayload", () => {
   });
 
   it.each([
-    ["standard", "29.34 AIC · 38.2k in / 6.1k out · 15.1k cache"],
-    ["compact", "29.34 AIC"],
-    ["full", "29.34 AIC ($0.2934) · 23.1k fresh / 12.0k cache rd / 3.1k cache wr / 6.1k out · Σ 44.3k · 900 reason"],
+    ["standard", "$0.2934 · 29.34 AIC · 38.2k in / 6.1k out · 15.1k cache"],
+    ["compact", "$0.2934"],
+    ["full", "$0.2934 · 29.34 AIC · 23.1k fresh / 12.0k cache rd / 3.1k cache wr / 6.1k out · Σ 44.3k · 900 reason"],
   ])("prices auto model from display name in %s format", (format, expected) => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     process.env.COPILOT_COST_FORMAT = format;
@@ -111,14 +112,29 @@ describe("renderPayload", () => {
     expect(renderPayload(autoPayload, { persist: false })).toBe(expected);
   });
 
-  it("converts explicit AI credits to dollars only in verbose format", () => {
+  it("converts explicit AI credits to dollars in verbose format", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     process.env.COPILOT_COST_FORMAT = "verbose";
     const autoPayload = JSON.parse(JSON.stringify(payload)) as { model: { id: string }; cost: { total_ai_credits: number } };
     autoPayload.model.id = "auto";
     autoPayload.cost.total_ai_credits = 12.345;
 
-    expect(renderPayload(autoPayload, { persist: false })).toContain("12.35 AIC ($0.1235)");
+    expect(renderPayload(autoPayload, { persist: false })).toContain("$0.1235 · 12.35 AIC");
+  });
+
+  it("allows AIC-only metric in compact format", () => {
+    process.env.COPILOT_COST_NO_COLOR = "1";
+    process.env.COPILOT_COST_FORMAT = "compact";
+    process.env.COPILOT_COST_METRIC = "aic";
+
+    expect(renderPayload(payload, { persist: false })).toBe("29.34 AIC");
+  });
+
+  it("allows dollars-only metric in standard format", () => {
+    process.env.COPILOT_COST_NO_COLOR = "1";
+    process.env.COPILOT_COST_METRIC = "usd";
+
+    expect(renderPayload(payload, { persist: false })).toBe("$0.2934 · 38.2k in / 6.1k out · 15.1k cache");
   });
 
   it("strips ANSI color when color is disabled", () => {
@@ -129,7 +145,7 @@ describe("renderPayload", () => {
 
   it("renders a zero placeholder by default when payload has no usage", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
-    expect(renderPayload({}, { persist: false })).toBe("0.00 AIC · 0 in / 0 out");
+    expect(renderPayload({}, { persist: false })).toBe("$0.0000 · 0.00 AIC · 0 in / 0 out");
   });
 
   it("returns empty string when payload has no usage and COPILOT_COST_HIDE_ZERO is set", () => {
@@ -141,6 +157,6 @@ describe("renderPayload", () => {
   it("renders a zero placeholder in compact format by default", () => {
     process.env.COPILOT_COST_NO_COLOR = "1";
     process.env.COPILOT_COST_FORMAT = "compact";
-    expect(renderPayload({}, { persist: false })).toBe("0.00 AIC");
+    expect(renderPayload({}, { persist: false })).toBe("$0.0000");
   });
 });

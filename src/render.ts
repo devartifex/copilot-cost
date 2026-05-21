@@ -62,6 +62,19 @@ function formatAic(aic: number | null, model: string | null): string {
   return model ? `? AIC (${model})` : "? AIC";
 }
 
+function formatUsd(usd: number | null, model: string | null): string {
+  if (usd !== null) return `$${usd.toFixed(4)}`;
+  return model ? `? USD (${model})` : "? USD";
+}
+
+function metricParts(metric: string, usdText: string, aicText: string, usdKnown: boolean): string[] {
+  const normalized = metric.trim().toLowerCase();
+  if (normalized === "aic" || normalized === "credits" || normalized === "ai_credits") return [aicText];
+  if (normalized === "both" || normalized === "all") return usdKnown ? [usdText, aicText] : [aicText];
+  if (normalized === "usd" || normalized === "dollars" || normalized === "dollar") return [usdKnown ? usdText : aicText];
+  return [usdKnown ? usdText : aicText];
+}
+
 function modelCandidates(root: JsonObject): string[] {
   const modelInfo = asObject(root.model);
   const values = [
@@ -118,25 +131,28 @@ export function renderPayload(payload: unknown, opts: { persist?: boolean } = {}
   const explicitAic = payloadAic(root);
   const aic = explicitAic ?? (usd === null ? null : usd * 100);
   const fmt = process.env.COPILOT_COST_FORMAT ?? "standard";
+  const metric = process.env.COPILOT_COST_METRIC ?? (fmt === "compact" || fmt === "minimal" ? "usd" : "both");
   const reasoning = intValue(cw, "total_reasoning_tokens");
   const fresh = Math.max(totalInput - cacheRead - cacheWrite, 0);
   const shownModel = normalizeModel(rawModel) ?? (rawModel ? String(rawModel).trim() : null);
   const aicText = formatAic(aic, usd === null ? shownModel : null);
   const displayUsd = explicitAic === null ? usd : explicitAic / 100;
+  const usdText = formatUsd(displayUsd, displayUsd === null ? shownModel : null);
+  const costParts = metricParts(metric, usdText, aicText, displayUsd !== null);
 
   let body: string;
   if (fmt === "compact" || fmt === "minimal") {
-    body = aicText;
+    body = costParts.join(" · ");
   } else if (fmt === "full" || fmt === "verbose") {
     const parts = [
-      displayUsd === null ? aicText : `${aicText} ($${displayUsd.toFixed(4)})`,
+      costParts.join(" · "),
       `${short(fresh)} fresh / ${short(cacheRead)} cache rd / ${short(cacheWrite)} cache wr / ${short(output)} out`,
       `Σ ${short(totalInput + output)}`,
     ];
     if (reasoning) parts.push(`${short(reasoning)} reason`);
     body = parts.join(" · ");
   } else {
-    const parts = [aicText, `${short(totalInput)} in / ${short(output)} out`];
+    const parts = [...costParts, `${short(totalInput)} in / ${short(output)} out`];
     if (cacheRead || cacheWrite) parts.push(`${short(cacheRead + cacheWrite)} cache`);
     body = parts.join(" · ");
   }

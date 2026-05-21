@@ -1,6 +1,6 @@
 {
   "name": "copilot-cost",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-only GitHub Copilot CLI statusline + dashboard for real-time token cost tracking. Reads OpenTelemetry traces, never sends data anywhere.",
   "keywords": [
     "github",
