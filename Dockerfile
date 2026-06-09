@@ -1,6 +1,6 @@
 # Multi-stage build for copilot-cost dashboard
 # Stage 1: Build environment
-FROM node:22-alpine AS builder
+FROM node:20.20.2-alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -9,9 +9,11 @@ COPY package.json package-lock.json ./
 
 # Install dependencies
 # Support npm proxy configuration via build args
-ARG NPM_REGISTRY=https://registry.npmjs.org/
+ARG NPM_REGISTRY=""
 ARG NPM_PROXY=""
-RUN npm config set registry ${NPM_REGISTRY} && \
+ARG NPMRC_PATH=".npmrc"
+COPY .npmrc ${NPMRC_PATH}
+RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry ${NPM_REGISTRY}; fi && \
     if [ -n "${NPM_PROXY}" ]; then npm config set proxy ${NPM_PROXY}; fi && \
     npm ci --prefer-offline --no-audit
 
@@ -25,22 +27,24 @@ COPY pricing.snapshot.yaml ./
 # Build the application
 RUN npm run build
 
+# Prune devDependencies - keep only production dependencies for runtime
+RUN npm prune --omit=dev
+
 # Stage 2: Runtime environment
-FROM node:22-alpine
+FROM node:20.20.2-alpine3.22
 
 WORKDIR /app
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Copy built artifacts from builder
+# Copy built artifacts and pruned node_modules from builder
+# No second npm install needed - dependencies are already installed and pruned
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dashboard-ui/dist ./dashboard-ui/dist
 COPY --from=builder /app/pricing.snapshot.yaml ./
-
-# Copy runtime package files (only production dependencies)
-COPY package.json ./
-RUN npm install --prefer-offline --no-audit --omit=dev
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
 # Create non-root user for security
 RUN addgroup -g 1000 copilot && \
@@ -65,4 +69,4 @@ EXPOSE 4567
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Default command: start dashboard
-CMD ["node", "/app/dist/cli.js", "dashboard", "--host", "0.0.0.0", "--no-open"]
+CMD ["node", "/app/dist/cli.js", "dashboard", "--no-open"]
