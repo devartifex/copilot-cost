@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  copilot-cost-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Uncomment and set these if behind a corporate proxy
+        # NPM_PROXY: "http://proxy.company.com:8080"
+        # NPM_REGISTRY: "https://registry.npmjs.org/"
+    container_name: copilot-cost-dashboard
+    ports:
+      - "4567:4567"
+    volumes:
+      # Mount your OpenTelemetry data directory
+      # Linux/macOS example:
+      # - ~/.copilot/otel:/home/copilot/.copilot/otel:ro
+      
+      # Windows (PowerShell):
+      # - $env:USERPROFILE\.copilot\otel:/home/copilot/.copilot/otel:ro
+      
+      # Windows (CMD):
+      # - %USERPROFILE%\.copilot\otel:/home/copilot/.copilot/otel:ro
+    environment:
+      # Optional: set custom OTel directory (must match mount point)
+      - COPILOT_OTEL_DIR=/home/copilot/.copilot/otel
+    restart: unless-stopped
+    # Uncomment for more permissive host binding (not recommended):
+    # Keeping default 127.0.0.1 binding for security
+
+# To use this file on Windows (PowerShell):
+# docker-compose -f docker-compose.yml up
+#
+# To use on Windows (CMD):
+# docker-compose -f docker-compose.yml up
+#
+# To rebuild after code changes:
+# docker-compose build --no-cache && docker-compose up

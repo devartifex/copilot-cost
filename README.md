@@ -21,6 +21,8 @@ A zero-config **statusline + local dashboard** that turns Copilot CLI's OpenTele
 >
 > The package is not published to a registry yet. Install it locally from this repository.
 
+### Standard Installation (Linux / macOS / Windows)
+
 ```bash
 git clone https://github.com/devartifex/copilot-cost.git
 cd copilot-cost
@@ -40,6 +42,34 @@ Verify any time with:
 ```bash
 copilot-cost doctor
 ```
+
+### 🐳 Docker Installation (Restricted Environments)
+
+If npm install fails due to permission restrictions or proxy issues, use Docker:
+
+```bash
+git clone https://github.com/devartifex/copilot-cost.git
+cd copilot-cost
+
+# Build the Docker image (with optional proxy support)
+docker build -t copilot-cost:latest .
+
+# Run the dashboard with your OpenTelemetry data mounted
+docker run -p 4567:4567 \
+  -v ~/.copilot/otel:/home/copilot/.copilot/otel:ro \
+  copilot-cost:latest
+```
+
+**Windows (PowerShell)**:
+```powershell
+docker run -p 4567:4567 `
+  -v "$env:USERPROFILE\.copilot\otel:/home/copilot/.copilot/otel:ro" `
+  copilot-cost:latest
+```
+
+Then open: **http://localhost:4567**
+
+For detailed Docker setup, proxy configuration, and troubleshooting, see [DOCKER.md](DOCKER.md).
 
 ---
 
@@ -90,6 +120,39 @@ Binds to `127.0.0.1` by default and shows lifetime / today / week / month totals
 | ![dashboard light](docs/dashboard-light.png) | ![dashboard dark](docs/dashboard-dark.png) |
 
 Use `--port`, `--host 127.0.0.1`, or `--no-open` as needed.
+
+### 📂 Mounting OpenTelemetry Data
+
+The dashboard reads OpenTelemetry traces from `~/.copilot/otel/`. When running via Docker or in restricted environments, mount your OTel data directory:
+
+**Docker (Linux/macOS)**:
+```bash
+docker run -p 4567:4567 \
+  -v ~/.copilot/otel:/home/copilot/.copilot/otel:ro \
+  copilot-cost:latest
+```
+
+**Docker (Windows PowerShell)**:
+```powershell
+docker run -p 4567:4567 `
+  -v "$env:USERPROFILE\.copilot\otel:/home/copilot/.copilot/otel:ro" `
+  copilot-cost:latest
+```
+
+**Docker Compose**: Uncomment the volume mount in `docker-compose.yml` and run:
+```bash
+docker-compose up -d
+```
+
+The `:ro` flag mounts the directory as **read-only** for security. Data is read in real-time; no container restart needed when new traces are generated.
+
+**Locating your OTel data**:
+- **Linux/macOS**: `~/.copilot/otel/copilot-otel.jsonl`
+- **Windows**: `%USERPROFILE%\.copilot\otel\copilot-otel.jsonl`
+
+If the directory doesn't exist yet, run `copilot-cost doctor` to set up OpenTelemetry collection.
+
+See [DOCKER.md](DOCKER.md) for detailed Docker setup, proxy configuration, and troubleshooting.
 
 ---
 
