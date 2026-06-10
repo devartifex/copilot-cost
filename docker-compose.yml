@@ -23,8 +23,10 @@ services:
       # Windows (CMD):
       # - %USERPROFILE%\.copilot\otel:/home/copilot/.copilot/otel:ro
     environment:
-      # Optional: set custom OTel directory (must match mount point)
+      # Required: OTel configuration
       - COPILOT_OTEL_DIR=/home/copilot/.copilot/otel
+      - COPILOT_OTEL_ENABLED=true
+      - COPILOT_OTEL_EXPORTER_TYPE=file
     restart: unless-stopped
     # Uncomment for more permissive host binding (not recommended):
     # Keeping default 127.0.0.1 binding for security

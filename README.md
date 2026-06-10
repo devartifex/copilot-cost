@@ -57,6 +57,9 @@ docker build -t copilot-cost:latest .
 # Run the dashboard with your OpenTelemetry data mounted
 docker run -p 4567:4567 \
   -v ~/.copilot/otel:/home/copilot/.copilot/otel:ro \
+  -e COPILOT_OTEL_DIR=/home/copilot/.copilot/otel \
+  -e COPILOT_OTEL_ENABLED=true \
+  -e COPILOT_OTEL_EXPORTER_TYPE=file \
   copilot-cost:latest
 ```
 
@@ -64,12 +67,15 @@ docker run -p 4567:4567 \
 ```powershell
 docker run -p 4567:4567 `
   -v "$env:USERPROFILE\.copilot\otel:/home/copilot/.copilot/otel:ro" `
+  -e COPILOT_OTEL_DIR=/home/copilot/.copilot/otel `
+  -e COPILOT_OTEL_ENABLED=true `
+  -e COPILOT_OTEL_EXPORTER_TYPE=file `
   copilot-cost:latest
 ```
 
 Then open: **http://localhost:4567**
 
-For detailed Docker setup, proxy configuration, and troubleshooting, see [DOCKER.md](DOCKER.md).
+For complete Docker setup including proxy configuration, troubleshooting, and environment variable reference, see [DOCKER.md](DOCKER.md).
 
 ---
 
