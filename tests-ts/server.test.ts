@@ -123,7 +123,7 @@ describe("dashboard server", () => {
 
   it("refuses non-local binds", async () => {
     const { makeServer } = await setup();
-    expect(() => makeServer("0.0.0.0", 0)).toThrow(/local binds/);
+    expect(() => makeServer("1.2.3.4", 0)).toThrow(/local binds/);
   });
 
   it("reports OTel enabled when the shell profile is configured", async () => {
