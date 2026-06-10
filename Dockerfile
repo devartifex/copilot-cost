@@ -1,6 +1,10 @@
+ARG DOCKER_REGISTRY=""
+ARG DOCKER_BASE_IMAGE="node"
+ARG DOCKER_BASE_IMAGE_TAG="24.16.0-alpine3.23"
+
 # Multi-stage build for copilot-cost dashboard
 # Stage 1: Build environment
-FROM node:20.20.2-alpine3.22 AS builder
+FROM ${DOCKER_REGISTRY}${DOCKER_BASE_IMAGE}:${DOCKER_BASE_IMAGE_TAG} AS builder
 
 WORKDIR /app
 
@@ -29,7 +33,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 2: Runtime environment
-FROM node:20.20.2-alpine3.22
+FROM ${DOCKER_REGISTRY}${DOCKER_BASE_IMAGE}:${DOCKER_BASE_IMAGE_TAG}
 
 WORKDIR /app
 
