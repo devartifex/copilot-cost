@@ -132,7 +132,7 @@ async function handle(req: IncomingMessage, res: ServerResponse, expectedPort: (
 export type DashboardServer = http.Server & { setExpectedPort(port: number): void };
 
 export function makeServer(host = "127.0.0.1", port = 4567): DashboardServer {
-  if (host !== "127.0.0.1" && host !== "localhost") {
+  if (host !== "127.0.0.1" && host !== "localhost" && host !== "0.0.0.0") {
     throw new Error("dashboard only supports local binds (127.0.0.1)");
   }
   let expectedPort = port === 0 ? undefined : port;

@@ -67,4 +67,4 @@ EXPOSE 4567
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Default command: start dashboard
-CMD ["node", "/app/dist/cli.js", "dashboard", "--host", "127.0.0.1"]
+CMD ["node", "/app/dist/cli.js", "dashboard", "--host", "0.0.0.0", "--no-open"]
