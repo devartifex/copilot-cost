@@ -11,8 +11,6 @@ COPY package.json package-lock.json ./
 # Support npm proxy configuration via build args
 ARG NPM_REGISTRY=""
 ARG NPM_PROXY=""
-ARG NPMRC_PATH=".npmrc"
-COPY .npmrc ${NPMRC_PATH}
 RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry ${NPM_REGISTRY}; fi && \
     if [ -n "${NPM_PROXY}" ]; then npm config set proxy ${NPM_PROXY}; fi && \
     npm ci --prefer-offline --no-audit
@@ -47,8 +45,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 # Create non-root user for security
-RUN addgroup -g 1000 copilot && \
-    adduser -D -u 1000 -G copilot copilot
+RUN addgroup -g 10000 copilot && \
+    adduser -D -u 10000 -G copilot copilot
 
 # Create volume mount point for OpenTelemetry data
 RUN mkdir -p /home/copilot/.copilot/otel && \
@@ -69,4 +67,4 @@ EXPOSE 4567
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Default command: start dashboard
-CMD ["node", "/app/dist/cli.js", "dashboard", "--no-open"]
+CMD ["node", "/app/dist/cli.js", "dashboard", "--host", "127.0.0.1"]
