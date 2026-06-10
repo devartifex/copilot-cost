@@ -1,11 +1,11 @@
-version: '3.8'
-
 services:
   copilot-cost-dashboard:
     build:
+      tags: 
+        - "copilot-cost:latest"
       context: .
       dockerfile: Dockerfile
-      args:
+      args: []
         # Uncomment and set these if behind a corporate proxy
         # NPM_PROXY: "http://proxy.company.com:8080"
         # NPM_REGISTRY: "https://registry.npmjs.org/"
@@ -21,7 +21,7 @@ services:
       # - $env:USERPROFILE\.copilot\otel:/home/copilot/.copilot/otel:ro
       
       # Windows (CMD):
-      # - %USERPROFILE%\.copilot\otel:/home/copilot/.copilot/otel:ro
+      # - $USERPROFILE/.copilot/otel:/home/copilot/.copilot/otel:ro
     environment:
       # Required: OTel configuration
       - COPILOT_OTEL_DIR=/home/copilot/.copilot/otel
