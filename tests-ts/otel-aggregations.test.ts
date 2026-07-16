@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { exportCsv, models, sessions, sessionDetail, summary, timeseries } from "../src/otel/aggregations.js";
 import { type NormalizedCall } from "../src/otel/parser.js";
 
 function call(partial: Partial<NormalizedCall>): NormalizedCall {
-  return { dedup_key: partial.dedup_key ?? crypto.randomUUID(), session_id: Object.hasOwn(partial, "session_id") ? partial.session_id! : "s1", ts: partial.ts ?? "2026-05-13T12:00:00.000Z", model: partial.model ?? "m1", input_tokens: partial.input_tokens ?? 0, output_tokens: partial.output_tokens ?? 0, cache_read: partial.cache_read ?? 0, cache_creation: partial.cache_creation ?? 0, reasoning: partial.reasoning ?? 0, usd_cost: partial.usd_cost ?? 0, duration_ms: partial.duration_ms ?? 0, source: partial.source ?? "cli-span" };
+  return { dedup_key: partial.dedup_key ?? randomUUID(), session_id: Object.hasOwn(partial, "session_id") ? partial.session_id! : "s1", ts: partial.ts ?? "2026-05-13T12:00:00.000Z", model: partial.model ?? "m1", input_tokens: partial.input_tokens ?? 0, output_tokens: partial.output_tokens ?? 0, cache_read: partial.cache_read ?? 0, cache_creation: partial.cache_creation ?? 0, reasoning: partial.reasoning ?? 0, usd_cost: partial.usd_cost ?? 0, duration_ms: partial.duration_ms ?? 0, source: partial.source ?? "cli-span" };
 }
 
 describe("OTel aggregations", () => {
