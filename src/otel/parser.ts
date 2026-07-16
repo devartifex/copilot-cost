@@ -119,7 +119,7 @@ export function normalizeSpan(record: unknown): NormalizedCall | null {
   const cacheCreation = num(a["gen_ai.usage.cache_creation_input_tokens"], a["gen_ai.usage.cache_creation.input_tokens"], a["gen_ai.usage.cache_creation"], a["gen_ai.usage.cache_write_input_tokens"], a["gen_ai.usage.cache_write.input_tokens"], a["gen_ai.usage.cache_write"], a.cache_creation_tokens, a["cache_write_input_tokens"], a.cache_creation, a.cache_write, record.cache_creation_tokens, record.cache_creation, record.cache_write);
   const output = num(a["gen_ai.usage.output_tokens"], a.output_tokens, record.output_tokens);
   const reasoning = num(a["gen_ai.usage.reasoning.output_tokens"], a["gen_ai.usage.reasoning_tokens"], a.reasoning, record.reasoning);
-  // OTel gen_ai.usage.input_tokens includes cache reads and cache creation; keep only fresh input for downstream aggregations.
+  // Total input includes both cache categories; downstream aggregations store only fresh input here.
   const freshInput = Math.max(rawInput - cacheRead - cacheCreation, 0);
 
   const start = timeFromTuple(record.startTime) ?? timeFromNano(record.startTimeUnixNano) ?? isoTime(record.ts) ?? isoTime(a.ts) ?? timeFromTuple(record.hrTime);

@@ -30,6 +30,22 @@ describe("OTel parser", () => {
     expect(call).toMatchObject({ dedup_key: "resp-1", session_id: "sess-b", model: "gpt-5-mini", input_tokens: 30, output_tokens: 7, cache_read: 20, duration_ms: 0, source: "chat-logrecord" });
   });
 
+  it("normalizes alternate cache token attribute names", () => {
+    const call = normalizeSpan({
+      traceId: "t2",
+      spanId: "s2",
+      attributes: {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "claude-sonnet-4.6",
+        "gen_ai.usage.input_tokens": 1_000,
+        "gen_ai.usage.cache_read_input_tokens": 250,
+        "gen_ai.usage.cache_write_input_tokens": 150,
+        "gen_ai.usage.output_tokens": 50,
+      },
+    });
+    expect(call).toMatchObject({ input_tokens: 600, cache_read: 250, cache_creation: 150, output_tokens: 50 });
+  });
+
   it("returns null for metric records", () => {
     expect(normalizeSpan({ scopeMetrics: [], attributes: { "gen_ai.operation.name": "chat" } })).toBeNull();
   });
