@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-16
+
+### Fixed
+
+- Corrected fresh-input accounting so both cache reads and cache writes are excluded from fresh tokens, including alternate OpenTelemetry cache attribute names emitted by Copilot CLI.
+- Corrected the dashboard pricing table to use the bundled `cached_input` field and expanded per-call details to show fresh input, cache reads, and cache writes separately.
+
 ## [0.3.0] - 2026-05-21
 
 ### Changed
