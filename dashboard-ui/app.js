@@ -238,7 +238,7 @@ async function renderPricing() {
       <button id="refresh-pricing" class="btn" type="button">Refresh pricing</button>
     </div>
     <div class="overflow-x-auto"><table class="table"><thead><tr><th>Model</th><th>Input</th><th>Output</th><th>Cache read</th><th>Cache write</th><th>Premium</th></tr></thead><tbody>
-      ${models.map(([model, row]) => `<tr><td class="font-medium">${escapeHtml(model)}</td><td>${pricingValue(row, ["input", "input_per_mtok", "input_cost_per_1m"])}</td><td>${pricingValue(row, ["output", "output_per_mtok", "output_cost_per_1m"])}</td><td>${pricingValue(row, ["cache_read", "cache_read_per_mtok"])}</td><td>${pricingValue(row, ["cache_write", "cache_write_per_mtok"])}</td><td>${pricingValue(row, ["premium_request", "premium_requests", "request"])} </td></tr>`).join("") || `<tr><td colspan="6">${emptyInline("Pricing data is not available yet.")}</td></tr>`}
+      ${models.map(([model, row]) => `<tr><td class="font-medium">${escapeHtml(model)}</td><td>${pricingValue(row, ["input"])}</td><td>${pricingValue(row, ["output"])}</td><td>${pricingValue(row, ["cached_input"])}</td><td>${pricingValue(row, ["cache_write"])}</td><td>—</td></tr>`).join("") || `<tr><td colspan="6">${emptyInline("Pricing data is not available yet.")}</td></tr>`}
     </tbody></table></div>
   </section>`;
   document.querySelector("#refresh-pricing").addEventListener("click", async (event) => {
@@ -359,8 +359,8 @@ function drawerContent(session, details) {
   <div class="mt-3 grid gap-3 sm:grid-cols-4">
     ${miniStat("Started", formatDate(session.started_at))}${miniStat("Last seen", formatDate(session.last_seen_at))}${miniStat("Requests", tok(session.premium_requests || calls.length))}${miniStat("Cache tokens", tok(totalCache))}
   </div>
-  <section class="mt-6"><h3 class="text-sm font-semibold">LLM calls</h3><div class="mt-3 overflow-x-auto"><table class="table"><thead><tr><th>Time</th><th>Model</th><th>Cost</th><th>Input</th><th>Output</th><th>Duration</th></tr></thead><tbody>
-    ${calls.map((call) => `<tr><td class="whitespace-nowrap text-muted-foreground">${formatDate(call.ts || call.started_at || call.timestamp || call.time)}</td><td>${escapeHtml(call.model || session.model || "unknown")}</td><td>${money(call.usd_cost)}</td><td>${tok(call.input_tokens)}</td><td>${tok(call.output_tokens)}</td><td>${tok(call.duration_ms || call.api_duration_ms || 0)} ms</td></tr>`).join("") || `<tr><td colspan="6">${emptyInline("No per-call records were returned for this session.")}</td></tr>`}
+  <section class="mt-6"><h3 class="text-sm font-semibold">LLM calls</h3><div class="mt-3 overflow-x-auto"><table class="table"><thead><tr><th>Time</th><th>Model</th><th>Cost</th><th>Fresh Input</th><th>Cache Read</th><th>Cache Write</th><th>Output</th><th>Duration</th></tr></thead><tbody>
+    ${calls.map((call) => `<tr><td class="whitespace-nowrap text-muted-foreground">${formatDate(call.ts || call.started_at || call.timestamp || call.time)}</td><td>${escapeHtml(call.model || session.model || "unknown")}</td><td>${money(call.usd_cost)}</td><td>${tok(call.input_tokens)}</td><td>${tok(call.cache_read || 0)}</td><td>${tok(call.cache_creation || 0)}</td><td>${tok(call.output_tokens)}</td><td>${tok(call.duration_ms || call.api_duration_ms || 0)} ms</td></tr>`).join("") || `<tr><td colspan="8">${emptyInline("No per-call records were returned for this session.")}</td></tr>`}
   </tbody></table></div></section>`;
 }
 
