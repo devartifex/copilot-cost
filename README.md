@@ -122,7 +122,7 @@ GitHub Copilot CLI ──OTel spans (JSONL)──▶ ~/.copilot/otel/copilot-ote
    export COPILOT_OTEL_FILE_EXPORTER_PATH="$HOME/.copilot/otel/copilot-otel.jsonl"
    ```
 2. **Aggregate** — on every render, recent spans are read, `gen_ai.usage.*` counters and `gen_ai.request.model` are extracted, and rolled up by session / model / day.
-3. **Estimate** — token counts are multiplied by a bundled pricing snapshot from GitHub's public [Copilot models & pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing) table to estimate USD and GitHub AI Credits (AIC). This is not billing data; run `copilot-cost refresh-pricing --force` to refresh the local pricing cache when GitHub updates its published prices.
+3. **Estimate** — token counts are multiplied by prices from GitHub's public [Copilot models & pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing) table to estimate USD and GitHub AI Credits (AIC). The local cache refreshes automatically when it is older than seven days, retains the last-known-good data if GitHub is unavailable, and falls back to the bundled snapshot when no cache exists. Long-context rates are selected from the published input-token thresholds. This is not billing data.
 4. **Render** — a one-line statusline, plus an optional local web dashboard.
 
 More on the underlying telemetry pipeline: [Copilot OpenTelemetry observability](https://docs.github.com/en/copilot/how-tos/copilot-sdk/observability/opentelemetry).
@@ -134,7 +134,7 @@ More on the underlying telemetry pipeline: [Copilot OpenTelemetry observability]
 - ✅ Usage data **stays on your machine**.
 - ✅ The dashboard only supports local binds (`127.0.0.1` or `localhost`).
 - ✅ This package emits **no telemetry or analytics** of its own.
-- 🌐 Pricing refresh contacts `docs.github.com` only when requested or when the cache needs refreshing.
+- 🌐 Pricing refresh contacts GitHub's public Docs pricing source only when requested or when the cache needs refreshing.
 
 ---
 
@@ -147,7 +147,7 @@ More on the underlying telemetry pipeline: [Copilot OpenTelemetry observability]
 | `uninstall [--yes]` | Remove settings installed by this package when they point at this tool. |
 | `doctor` | Check statusline setup, OpenTelemetry output, pricing, and dashboard readiness. |
 | `dashboard [--port <n>] [--host <h>] [--no-open]` | Serve the local dashboard. |
-| `refresh-pricing [--force]` | Refresh model pricing; `--force` bypasses the cache TTL. |
+| `refresh-pricing [--force]` | Refresh model pricing now; `--force` bypasses the seven-day cache TTL. |
 
 ---
 
@@ -157,7 +157,7 @@ More on the underlying telemetry pipeline: [Copilot OpenTelemetry observability]
 - **No usage shows up yet.** Make sure you're on the latest Copilot CLI, restart your shell and `copilot`, send a prompt, then check for JSONL files in `~/.copilot/otel/`.
 - **I do not want profile edits.** Use `copilot-cost install --no-otel-profile` and paste the printed OpenTelemetry block into the shell profile you choose.
 - **The dashboard will not bind.** Use a local host only, e.g. `copilot-cost dashboard --host 127.0.0.1 --port 4567`.
-- **Pricing looks stale.** Run `copilot-cost refresh-pricing --force`.
+- **Pricing looks stale.** Run `copilot-cost refresh-pricing --force`. Set `COPILOT_COST_REFRESH_DAYS` to change the automatic refresh interval, or `COPILOT_COST_AUTO_REFRESH=0` to disable automatic refreshes.
 
 ---
 

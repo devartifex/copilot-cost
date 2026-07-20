@@ -111,7 +111,8 @@ export function normalizeSpan(record: unknown): NormalizedCall | null {
   if (!isObject(record) || !isChatSpan(record)) return null;
   const a = attrs(record);
   const rawModel = str(a["gen_ai.request.model"] ?? a["gen_ai.response.model"] ?? a["model"] ?? record.model);
-  const model = normalizeModel(rawModel) ?? rawModel;
+  const pricedModel = getModelPrice(rawModel);
+  const model = pricedModel.price ? pricedModel.model : normalizeModel(rawModel) ?? rawModel;
   if (!model) return null;
 
   const rawInput = num(a["gen_ai.usage.input_tokens"], a.input_tokens, record.input_tokens);
@@ -134,7 +135,7 @@ export function normalizeSpan(record: unknown): NormalizedCall | null {
   const responseId = str(a["gen_ai.response.id"] ?? record["gen_ai.response.id"]);
   const existingDedup = str(record.dedup_key);
   const dedupKey = existingDedup ?? (traceId && spanId ? `${traceId}:${spanId}` : responseId ?? (isLogRecord ? `${model}:${JSON.stringify(record.hrTime)}` : spanId ?? hashRecord(record)));
-  const { price } = getModelPrice(model);
+  const { price } = pricedModel;
   const usdCost = price ? computeCost({ input: freshInput + cacheRead + cacheCreation, cache_read: cacheRead, cache_write: cacheCreation, output }, price) : 0;
 
   return {

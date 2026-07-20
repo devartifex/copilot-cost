@@ -134,7 +134,7 @@ export function renderPayload(payload: unknown, opts: { persist?: boolean } = {}
   const metric = process.env.COPILOT_COST_METRIC ?? (fmt === "compact" || fmt === "minimal" ? "usd" : "both");
   const reasoning = intValue(cw, "total_reasoning_tokens");
   const fresh = Math.max(totalInput - cacheRead - cacheWrite, 0);
-  const shownModel = normalizeModel(rawModel) ?? (rawModel ? String(rawModel).trim() : null);
+  const shownModel = pricedModel?.model ?? normalizeModel(rawModel) ?? (rawModel ? String(rawModel).trim() : null);
   const aicText = formatAic(aic, usd === null ? shownModel : null);
   const displayUsd = explicitAic === null ? usd : explicitAic / 100;
   const usdText = formatUsd(displayUsd, displayUsd === null ? shownModel : null);

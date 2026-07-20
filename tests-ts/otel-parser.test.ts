@@ -46,6 +46,22 @@ describe("OTel parser", () => {
     expect(call).toMatchObject({ input_tokens: 600, cache_read: 250, cache_creation: 150, output_tokens: 50 });
   });
 
+  it("does not bill Anthropic cache creation as fresh input", () => {
+    const call = normalizeSpan({
+      traceId: "issue-6",
+      spanId: "cache-write",
+      attributes: {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "claude-opus-4.5",
+        "gen_ai.usage.input_tokens": 20_000,
+        "gen_ai.usage.cache_creation.input_tokens": 19_000,
+        "gen_ai.usage.output_tokens": 200,
+      },
+    });
+    expect(call?.input_tokens).toBe(1_000);
+    expect(call?.usd_cost).toBeCloseTo(0.12875, 9);
+  });
+
   it("returns null for metric records", () => {
     expect(normalizeSpan({ scopeMetrics: [], attributes: { "gen_ai.operation.name": "chat" } })).toBeNull();
   });

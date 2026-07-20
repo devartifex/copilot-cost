@@ -72,9 +72,11 @@ describe("pricing loader", () => {
     expect(second.models["gpt-5-mini"]?.input).toBe(1);
   });
 
-  it("normalizes internal and fast suffixes", () => {
+  it("normalizes internal suffixes while preserving fast model pricing", () => {
     expect(normalizeModel("claude-opus-4.7-1m-internal")).toBe("claude-opus-4.7");
-    expect(normalizeModel("gpt-5-mini-fast")).toBe("gpt-5-mini");
+    expect(normalizeModel("gemini-3.1-pro-preview")).toBe("gemini-3.1-pro");
+    expect(normalizeModel("gpt-5-mini-fast")).toBe("gpt-5-mini-fast");
+    expect(normalizeModel("Claude Opus 4.8 (fast mode) (preview)")).toBe("claude-opus-4.8-fast");
   });
 
   it("normalizes display names and auto labels", () => {
@@ -87,5 +89,20 @@ describe("pricing loader", () => {
     const price = { vendor: "anthropic", input: 5, cached_input: 0.5, cache_write: 6.25, output: 25 };
     const cost = computeCost({ input: 38_200, cache_read: 12_000, cache_write: 3_100, output: 6_100 }, price);
     expect(cost).toBeCloseTo(0.293375, 9);
+  });
+
+  it("uses long-context rates only above the published threshold", () => {
+    const price = {
+      vendor: "openai",
+      input: 2.5,
+      cached_input: 0.25,
+      output: 15,
+      long_context_threshold: 272_000,
+      long_context_input: 5,
+      long_context_cached_input: 0.5,
+      long_context_output: 22.5,
+    };
+    expect(computeCost({ input: 272_000, cache_read: 0, cache_write: 0, output: 1_000 }, price)).toBeCloseTo(0.695);
+    expect(computeCost({ input: 273_000, cache_read: 0, cache_write: 0, output: 1_000 }, price)).toBeCloseTo(1.3875);
   });
 });

@@ -11,6 +11,12 @@ export interface ModelPrice {
   cached_input: number;
   output: number;
   cache_write?: number;
+  category?: string;
+  long_context_threshold?: number;
+  long_context_input?: number;
+  long_context_cached_input?: number;
+  long_context_output?: number;
+  long_context_cache_write?: number;
 }
 
 export interface Pricing {
@@ -47,6 +53,7 @@ export function normalizeModel(modelId: string | undefined | null): string | nul
     model = parentheticalModel[1];
   }
   model = model
+    .replace(/\s*\(fast mode\)\s*\(preview\)\s*$/i, " fast")
     .replace(/\[\^[^\]]+\]/g, "")
     .trim()
     .toLowerCase()
@@ -54,7 +61,7 @@ export function normalizeModel(modelId: string | undefined | null): string | nul
     .replace(/[^a-z0-9.+-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
-  for (const suffix of ["-1m-internal", "-fast"]) {
+  for (const suffix of ["-1m-internal", "-preview"]) {
     if (model.endsWith(suffix)) {
       model = model.slice(0, -suffix.length);
     }
@@ -121,6 +128,12 @@ function coercePricing(raw: RawPricing): Pricing {
       cached_input: Number(row.cached_input ?? 0),
       output: Number(row.output ?? 0),
       ...(row.cache_write == null ? {} : { cache_write: Number(row.cache_write) }),
+      ...(row.category == null ? {} : { category: String(row.category) }),
+      ...(row.long_context_threshold == null ? {} : { long_context_threshold: Number(row.long_context_threshold) }),
+      ...(row.long_context_input == null ? {} : { long_context_input: Number(row.long_context_input) }),
+      ...(row.long_context_cached_input == null ? {} : { long_context_cached_input: Number(row.long_context_cached_input) }),
+      ...(row.long_context_output == null ? {} : { long_context_output: Number(row.long_context_output) }),
+      ...(row.long_context_cache_write == null ? {} : { long_context_cache_write: Number(row.long_context_cache_write) }),
     };
   }
   return {
@@ -158,8 +171,11 @@ export function getModelPrice(
 ): { model: string | null; price: ModelPrice | null } {
   const model = normalizeModel(modelId);
   if (!model) return { model: null, price: null };
-  const row = loadPricing(pricingPath).models[model] ?? null;
-  return { model, price: row };
+  const pricing = loadPricing(pricingPath);
+  const exact = pricing.models[model];
+  if (exact) return { model, price: exact };
+  const fallbackModel = model.endsWith("-fast") ? model.slice(0, -"-fast".length) : model;
+  return { model: fallbackModel, price: pricing.models[fallbackModel] ?? null };
 }
 
 export function computeCost(
@@ -171,10 +187,17 @@ export function computeCost(
   const cacheWrite = Math.trunc(tokens.cache_write || 0);
   const output = Math.trunc(tokens.output || 0);
   const fresh = Math.max(totalInput - cacheRead - cacheWrite, 0);
+  const longContext = price.long_context_threshold != null && totalInput > price.long_context_threshold;
+  const inputPrice = longContext ? price.long_context_input ?? price.input : price.input;
+  const cachedInputPrice = longContext ? price.long_context_cached_input ?? price.cached_input : price.cached_input;
+  const cacheWritePrice = longContext
+    ? price.long_context_cache_write ?? price.cache_write ?? inputPrice
+    : price.cache_write ?? inputPrice;
+  const outputPrice = longContext ? price.long_context_output ?? price.output : price.output;
   return (
-    (fresh / 1_000_000) * Number(price.input || 0) +
-    (cacheRead / 1_000_000) * Number(price.cached_input || 0) +
-    (cacheWrite / 1_000_000) * Number(price.cache_write ?? price.input ?? 0) +
-    (output / 1_000_000) * Number(price.output || 0)
+    (fresh / 1_000_000) * Number(inputPrice || 0) +
+    (cacheRead / 1_000_000) * Number(cachedInputPrice || 0) +
+    (cacheWrite / 1_000_000) * Number(cacheWritePrice || 0) +
+    (output / 1_000_000) * Number(outputPrice || 0)
   );
 }
