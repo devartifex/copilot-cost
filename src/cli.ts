@@ -13,9 +13,15 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf-8");
 }
 
+async function refreshStalePricing(): Promise<void> {
+  if (process.env.COPILOT_COST_PRICING || process.env.COPILOT_COST_AUTO_REFRESH === "0") return;
+  await refreshPricing();
+}
+
 async function renderCommand(): Promise<void> {
   try {
     const payload = JSON.parse(await readStdin()) as unknown;
+    await refreshStalePricing();
     console.log(renderPayload(payload));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -54,6 +60,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     .option("--host <host>", "host to listen on")
     .option("--no-open", "do not open the dashboard in a browser")
     .action(async (opts: { port?: number; host?: string; open?: boolean }) => {
+      await refreshStalePricing();
       await cmdDashboard({ port: opts.port, host: opts.host, noOpen: opts.open === false });
     });
   try {
