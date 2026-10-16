@@ -45,9 +45,9 @@ describe("install commands", () => {
     expect(existsSync(otelDir)).toBe(true);
     expect(existsSync(otelExporterPath)).toBe(true);
     if (process.platform !== "win32") expect(statSync(shim).mode & 0o111).not.toBe(0);
-    const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as { statusLine: { command: string }; experimental: boolean };
+    const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as { statusLine: { command: string }; experimental?: boolean };
     expect(settings.statusLine.command).toBe(shim);
-    expect(settings.experimental).toBe(true);
+    expect(settings).not.toHaveProperty("experimental");
     expect(readFileSync(profilePath, "utf-8")).toContain("copilot-cost OTel exporter");
 
     await expect(cmdInstall({ yes: true })).resolves.toBe(0);
@@ -56,6 +56,30 @@ describe("install commands", () => {
     const backups = readdirSync(path.dirname(settingsPath)).filter((name) => name.startsWith("settings.json.bak."));
     expect(backups).toHaveLength(0);
     expect(path.dirname(settingsPath)).toBe(path.join(home, ".copilot"));
+  });
+
+  it.each([true, false])("preserves experimental: %s through install, reinstall, and uninstall", async (experimental) => {
+    const home = resetHome(`experimental-${experimental}`);
+    const settingsPath = path.join(home, ".copilot", "settings.json");
+    const original = { experimental, theme: "auto" };
+    mkdirSync(path.dirname(settingsPath), { recursive: true });
+    writeFileSync(settingsPath, `${JSON.stringify(original)}\n`, "utf-8");
+    const { cmdInstall, cmdUninstall } = await import("../src/install.js");
+
+    await expect(cmdInstall({ yes: true })).resolves.toBe(0);
+    const installed = readFileSync(settingsPath, "utf-8");
+    expect(JSON.parse(installed)).toMatchObject(original);
+    const backups = profileBackups(settingsPath);
+    expect(backups).toHaveLength(1);
+    expect(JSON.parse(readFileSync(path.join(path.dirname(settingsPath), backups[0]!), "utf-8"))).toEqual(original);
+
+    await expect(cmdInstall({ yes: true })).resolves.toBe(0);
+    expect(readFileSync(settingsPath, "utf-8")).toBe(installed);
+    expect(profileBackups(settingsPath)).toEqual(backups);
+    expect(vi.mocked(console.log).mock.calls.flat().join("\n")).toContain("already-configured; statusLine");
+
+    await expect(cmdUninstall({ yes: true })).resolves.toBe(0);
+    expect(JSON.parse(readFileSync(settingsPath, "utf-8"))).toEqual(original);
   });
 
   it("backs up an existing shell profile before appending the OTel block", async () => {

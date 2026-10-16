@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(".test-home", "doctor-tests");
@@ -38,7 +38,7 @@ describe("doctor", () => {
     await cmdInstall({ yes: true });
     await expect(cmdDoctor()).resolves.toBe(0);
     expect(logs.join("\n")).toContain("OK: settings statusLine");
-    expect(logs.join("\n")).toContain("OK: settings experimental");
+    expect(logs.join("\n")).not.toContain("settings experimental");
     expect(logs.join("\n")).toContain("OK: pricing");
     expect(logs.join("\n")).toContain("OK: pricing cache");
     expect(logs.join("\n")).toContain("WARN: shell restart");
@@ -53,9 +53,24 @@ describe("doctor", () => {
     const { cmdDoctor } = await loadInstall("missing");
     await expect(cmdDoctor()).resolves.toBe(1);
     expect(logs.join("\n")).toContain("FAIL: settings statusLine");
-    expect(logs.join("\n")).toContain("FAIL: settings experimental");
+    expect(logs.join("\n")).not.toContain("settings experimental");
     expect(logs.join("\n")).toContain("FAIL: shim executable");
     expect(logs.join("\n")).toContain("missing copilot-cost block");
+  });
+
+  it.each([true, false])("passes with experimental: %s", async (experimental) => {
+    const logs: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => { logs.push(String(msg)); });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { cmdInstall, cmdDoctor, resolveInstallPaths } = await loadInstall(`experimental-${experimental}`);
+    await cmdInstall({ yes: true });
+    const { settingsPath } = resolveInstallPaths();
+    const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    writeFileSync(settingsPath, JSON.stringify({ ...settings, experimental }), "utf-8");
+
+    await expect(cmdDoctor()).resolves.toBe(0);
+    expect(logs.join("\n")).toContain("OK: settings statusLine");
+    expect(logs.join("\n")).not.toContain("settings experimental");
   });
 
   it("explains missing OTel output after install", async () => {
@@ -82,6 +97,9 @@ describe("doctor", () => {
     await expect(cmdDoctor()).resolves.toBe(0);
     expect(logs.join("\n")).toContain("WARN: copilot statusline feature");
     expect(logs.join("\n")).toContain("STATUS_LINE=false");
+    expect(logs.join("\n")).toContain("update to the latest Copilot CLI and restart it");
+    expect(logs.join("\n")).toContain('Current versions do not require "experimental": true');
+    expect(logs.join("\n")).not.toContain("Ensure that flag is set");
   });
 
   it("reports OK when Copilot CLI feature flag STATUS_LINE is true", async () => {

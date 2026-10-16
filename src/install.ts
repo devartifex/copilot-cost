@@ -202,13 +202,11 @@ function installSettings(settingsPath: string, shimPath: string): "updated" | "a
   const settings = readJsonObject(settingsPath);
   const next = { type: "command", command: shimPath, padding: 1 };
   const statusLineMatches = JSON.stringify(settings.statusLine ?? null) === JSON.stringify(next);
-  const experimentalEnabled = settings.experimental === true;
-  if (statusLineMatches && experimentalEnabled) return "already-configured";
+  if (statusLineMatches) return "already-configured";
   if (existsSync(settingsPath)) {
     copyFileSync(settingsPath, `${settingsPath}.bak.${timestamp()}`);
   }
   settings.statusLine = next;
-  settings.experimental = true;
   writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf-8");
   return "updated";
 }
@@ -233,7 +231,7 @@ export async function cmdInstall(opts: { yes?: boolean; otelProfile?: boolean } 
   console.log([
     "copilot-cost installed:",
     `  shim: ${paths.shimPath}`,
-    `  settings: ${paths.settingsPath} (${settingsAction}; statusLine + experimental: true)`,
+    `  settings: ${paths.settingsPath} (${settingsAction}; statusLine)`,
     `  shell profile: ${paths.profilePath}`,
     "  restart: restart Copilot CLI or open a new shell for OTel env vars",
     `  otel env: ${otelAction}`,
@@ -295,8 +293,6 @@ export async function cmdDoctor(): Promise<number> {
   const settings = existsSync(paths.settingsPath) ? readJsonObject(paths.settingsPath) : null;
   const statusLine = settings?.statusLine as { command?: unknown } | undefined;
   if (!okLine("settings statusLine", Boolean(settings && statusLine?.command === paths.shimPath), `${paths.settingsPath}; expected command ${paths.shimPath}`)) failed = true;
-  const experimentalEnabled = settings?.experimental === true;
-  if (!okLine("settings experimental", experimentalEnabled, experimentalEnabled ? `${paths.settingsPath} has \"experimental\": true (required for custom statusLine)` : `${paths.settingsPath} is missing \"experimental\": true; the Copilot CLI ignores statusLine without it. Re-run 'copilot-cost install' or set it manually.`)) failed = true;
 
   try {
     const pricing = loadPricing(pricingCachePath(paths.home));
@@ -320,7 +316,7 @@ export async function cmdDoctor(): Promise<number> {
     okLine(
       "copilot statusline feature",
       false,
-      `Copilot CLI feature flag STATUS_LINE=false in ${statusLineFlag.logFile ?? copilotLogsDir(paths.home)}. The CLI gates the custom statusLine behind \"experimental\": true in ${paths.settingsPath}. Ensure that flag is set, then restart Copilot CLI.`,
+      `Copilot CLI feature flag STATUS_LINE=false in ${statusLineFlag.logFile ?? copilotLogsDir(paths.home)}. This may be from an older CLI session; update to the latest Copilot CLI and restart it. Current versions do not require "experimental": true for statusLine.`,
       false,
     );
   } else {
